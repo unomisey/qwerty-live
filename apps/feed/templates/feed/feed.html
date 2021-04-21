@@ -1,0 +1,186 @@
+{% extends 'core/base.html' %}
+
+{% load humanize %}
+
+{% block content %}
+
+    <div class="container" id="feedapp" xmlns:v-on="http://www.w3.org/1999/xhtml">
+        <div class="columns">
+            <div class="column is-12">
+                <div class="wrapper-form">
+                    <form v-on:submit.prevent="submitQwert()">
+                        <div class="field">
+                            <div class="control">
+                                <textarea class="textarea" v-model="body" placeholder="What are you qwerting?"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <div class="control">
+                                <button class="button is-success">Submit</button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+
+                <div class="wrapper-qwerts">
+
+                    <div class="qwert" v-for="qwert in qwerts">
+                            <article class="media">
+                                    <figure class="media-left">
+                                        <p class="image is-64x64">
+                                            <img :src="qwert.avatar">
+                                        </p>
+                                    </figure>
+
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p>
+                                            <strong>[[ qwert.qwerter ]]</strong>
+                                            <small>[[ qwert.created_at ]]</small>
+                                            <br>
+                                            [[  qwert.body ]]
+                                        </p>
+                                    </div>
+                                </div>
+                                </article>
+                        </div>
+                        {% for qwert in qwerts %}
+
+                            <div class="qwert">
+
+                                 <article class="media">
+                                    <figure class="media-left">
+                                        <p class="image is-64x64">
+                                            {% if qwert.created_by.qwertyprofile.avatar %}
+                                                <img src="{{ qwert.created_by.qwertyprofile.avatar.url }}">
+                                            {% endif %}
+                                        </p>
+                                    </figure>
+
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p>
+                                            <strong><a href="{% url 'qwerterprofile' qwert.created_by.username %}">{{ qwert.created_by.username }}</a></strong>
+                                            <small>{{ qwert.created_at | naturaltime }}</small>
+                                            <br>
+                                            {{ qwert.body }}
+                                            <br>
+                                            <a @click="likeQwert({{ qwert.id }})" v-if="!liked_qwerts.includes({{ qwert.id }})">Like</a>
+                                            <span v-if="liked_qwerts.includes({{ qwert.id }})">Liked</span>
+                                            <small id="likes-{{ qwert.id }}">{{ qwert.likes.count }} Likes </small>
+                                        </p>
+                                    </div>
+                                </div>
+                                </article>
+
+                            </div>
+
+                        {% endfor %}
+                </div>
+        </div>
+    </div>
+
+
+{% endblock %}
+
+
+{% block script %}
+
+
+    <script>
+
+    new Vue({
+
+        el: '#feedapp',
+        delimiters: ['[[', ']]'],
+        data () {
+            return {
+                qwerts: [],
+                body: '',
+                qwerter: '{{ request.user.username }}',
+                created_at: 'Now',
+                avatar: '{% if request.user.oinkerprofile.avatar %}{{ request.user.oinkerprofile.avatar.url }}{% endif %}',
+                liked_qwerts: [{% for qwert in qwerts %}{% if qwert.liked %}{{ qwert.id }},{% endif %}{% endfor %}]
+
+
+            }
+        },
+        methods: {
+            likeQwert(qwert_id) {
+                this.liked_qwerts.push(parseInt(qwert_id));
+
+                var qwert = {
+                    'qwert_id': qwert_id
+                };
+
+                fetch('/api/add_like', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(qwert)
+                })
+
+                .then((response) => {
+                    console.log(response);
+                })
+                .catch((error) => {
+                    console.log(error);
+                });
+
+                const el = document.getElementById('likes-' + qwert_id);
+                const likes = parseInt(el.innerHTML.split(' ')[0] + 1);
+                el.innerHTML = likes + ' likes';
+            },
+            submitQwert(){
+                console.log('submitQwert');
+
+                 if (this.body.length > 0) {
+                    var qwert = {
+                        'body': this.body,
+                        'qwerter': this.qwerter,
+                        'created_at': this.created_at,
+                        'avatar': this.avatar
+                    };
+
+                    this.qwerts.unshift(qwert);
+
+                    //Send to backend
+
+                     fetch('/api/add_qwert', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        credentials: 'same-origin',
+                        body: JSON.stringify(qwert)
+                     })
+                     .then((response) => {
+                        console.log(response);
+                    })
+                     .catch((error) => {
+                        console.log(error);
+                    });
+
+                 }
+
+                 this.body = '';
+
+
+            }
+        }
+
+    })
+
+
+
+    </script>
+
+
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+
+{% load humanize %}
+
+{% block content %}
+    <div class="container">
+        <div class="columns">
+            <div class="column is-12">
+                <h1 class="title">Search</h1>
+                <p>Search term: "{{ query }}"</p>
+
+                <hr>
+
+                <form method="get" action="{% url 'search' %}">
+                    <div class="field">
+                        <div class="control">
+                            <input type="text" class="input" name="query" value="{{ query }}">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <div class="control">
+                            <div class="button is-success">Search</div>
+                        </div>
+                    </div>
+
+                </form>
+
+                <hr>
+
+                <div class="search-results">
+                    {% if not qwerters and not qwerts %}
+                        <p>No results, please try a different search term..</p>
+                    {% endif %}
+
+                    {% if qwerters %}
+                        <strong>Qwerters</strong>
+
+                        {% for qwerter in qwerters %}
+                            <p><a href="{% url 'qwerterprofile' qwerter.username %}">{{ qwerter.username }}</a></p>
+                        {% endfor %}
+
+                    {% endif %}
+
+
+                    {% if qwerts %}
+                        <strong>Qwerts</strong>
+
+                        <div class="wrapper-oinks">
+                            {% for qwert in qwerts %}
+                            <div class="qwert">
+
+                                 <article class="media">
+                                    <figure class="media-left">
+                                        <p class="image is-64x64">
+                                            {% if qwert.created_by.qwertyprofile.avatar %}
+                                                <img src="{{ qwert.created_by.qwertyprofile.avatar.url }}">
+                                            {% endif %}
+                                        </p>
+                                    </figure>
+
+                                <div class="media-content">
+                                    <div class="content">
+                                        <p>
+                                            <strong><a href="{% url 'qwerterprofile' qwert.created_by.username %}">{{ qwert.created_by.username }}</a></strong>
+                                            <small>{{ qwert.created_at | naturaltime }}</small>
+                                            <br>
+                                            {{ qwert.body }}
+
+                                        </p>
+                                    </div>
+                                </div>
+                                </article>
+
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+
+                </div>
+
+            </div>
+        </div>
+    </div>
+{% endblock %}
